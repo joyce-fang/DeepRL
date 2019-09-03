@@ -466,9 +466,10 @@ if __name__ == '__main__':
     # option_critic_feature(game=game)
     # ppo_feature(game=game)
 
-    game = 'HalfCheetah-v2'
+    #game = 'HalfCheetah-v2'
+    game = 'MountainCarContinuous-v0'
     # a2c_continuous(game=game)
-    # ppo_continuous(game=game)
+    ppo_continuous(game=game)
     # ddpg_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'

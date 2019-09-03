@@ -9,13 +9,13 @@ import numpy as np
 from ..utils import *
 import torch.multiprocessing as mp
 from collections import deque
-from skimage.io import imsave
+#from skimage.io import imsave
 
 
 class BaseAgent:
     def __init__(self, config):
         self.config = config
-        self.logger = get_logger(tag=config.tag, log_level=config.log_level)
+        #self.logger = get_logger(tag=config.tag, log_level=config.log_level)
         self.task_ind = 0
 
     def close(self):
@@ -51,10 +51,10 @@ class BaseAgent:
         for ep in range(self.config.eval_episodes):
             total_rewards = self.eval_episode()
             episodic_returns.append(np.sum(total_rewards))
-        self.logger.info('steps %d, episodic_return_test %.2f(%.2f)' % (
+        print('steps %d, episodic_return_test %.2f(%.2f)' % (
             self.total_steps, np.mean(episodic_returns), np.std(episodic_returns) / np.sqrt(len(episodic_returns))
         ))
-        self.logger.add_scalar('episodic_return_test', np.mean(episodic_returns), self.total_steps)
+        #self.logger.add_scalar('episodic_return_test', np.mean(episodic_returns), self.total_steps)
         return {
             'episodic_return_test': np.mean(episodic_returns),
         }
@@ -63,8 +63,8 @@ class BaseAgent:
         if isinstance(info, dict):
             ret = info['episodic_return']
             if ret is not None:
-                self.logger.add_scalar('episodic_return_train', ret, self.total_steps + offset)
-                self.logger.info('steps %d, episodic_return_train %s' % (self.total_steps + offset, ret))
+                #self.logger.add_scalar('episodic_return_train', ret, self.total_steps + offset)
+                print('steps %d, episodic_return_train %s' % (self.total_steps + offset, ret))
         elif isinstance(info, tuple):
             for i, info_ in enumerate(info):
                 self.record_online_return(info_, i)
@@ -102,7 +102,7 @@ class BaseAgent:
     def record_obs(self, env, dir, steps):
         env = env.env.envs[0]
         obs = env.render(mode='rgb_array')
-        imsave('%s/%04d.png' % (dir, steps), obs)
+        #imsave('%s/%04d.png' % (dir, steps), obs)
 
 
 class BaseActor(mp.Process):

@@ -7,18 +7,47 @@
 from ..network import *
 from ..component import *
 from .BaseAgent import *
+import random
 
 
 class PPOAgent(BaseAgent):
-    def __init__(self, config):
+    # PPO agent config
+    def generate_config(utils):
+        config = utils.config.Config()
+        config.num_workers = 20
+        config.state_dim = 33
+        config.action_dim = 4
+        config.network_fn = lambda: GaussianActorCriticNet(
+            config.state_dim, config.action_dim,
+            actor_body=network_bodies.FCBody(config.state_dim, hidden_units=(64, 64), gate=torch.tanh),
+            critic_body=network_bodies.FCBody(config.state_dim, hidden_units=(64, 64), gate=torch.tanh))
+        config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+        config.discount = 0.99
+        config.use_gae = True
+        config.gae_tau = 0.95
+        config.gradient_clip = 0.5
+        config.rollout_length = 256 #128
+        config.optimization_epochs = 10
+        config.mini_batch_size = 64*20 #32*20
+        config.ppo_ratio_clip = 0.2
+        config.max_steps = 1e6
+        config.state_normalizer = utils.normalizer.MeanStdNormalizer()
+        config.seed = 0
+        return config
+
+    def __init__(self, config, env):
         BaseAgent.__init__(self, config)
         self.config = config
-        self.task = config.task_fn()
+        self.env = env
         self.network = config.network_fn()
         self.opt = config.optimizer_fn(self.network.parameters())
         self.total_steps = 0
-        self.states = self.task.reset()
+        self.states = self.env.reset()
         self.states = config.state_normalizer(self.states)
+        self.scores = np.zeros(20)
+        self.total_episodes = 0
+        self.seed = random.seed(config.seed)
+        self.mean_score_history = []
 
     def step(self):
         config = self.config
@@ -26,8 +55,17 @@ class PPOAgent(BaseAgent):
         states = self.states
         for _ in range(config.rollout_length):
             prediction = self.network(states)
-            next_states, rewards, terminals, info = self.task.step(to_np(prediction['a']))
-            self.record_online_return(info)
+            next_states, rewards, terminals, info = self.env.step(to_np(prediction['a']))
+            self.scores += rewards
+            if np.any(terminals):
+                self.total_episodes += 1
+                print('# episode: {} --- total score (averaged over agents) this episode: {}'.format(self.total_episodes, np.mean(self.scores)))
+                self.mean_score_history.append(np.mean(self.scores))
+                self.env.reset()
+                self.scores = np.zeros(20)
+
+
+            #self.record_online_return(info)
             rewards = config.reward_normalizer(rewards)
             next_states = config.state_normalizer(next_states)
             storage.add(prediction)
