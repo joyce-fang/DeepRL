@@ -30,7 +30,7 @@ class PPOAgent(BaseAgent):
         config.optimization_epochs = 10
         config.mini_batch_size = 64*20 #32*20
         config.ppo_ratio_clip = 0.2
-        config.max_steps = 1e6
+        config.max_steps = 5e6
         config.state_normalizer = utils.normalizer.MeanStdNormalizer()
         config.seed = 0
         return config
